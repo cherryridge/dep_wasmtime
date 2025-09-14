@@ -1,0 +1,177 @@
+﻿name: Main Task
+
+permissions:
+    contents: write
+
+on:
+    schedule:
+        - cron: "0 9 */7 * *"
+    workflow_dispatch:
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        outputs:
+            update: ${{steps.should_update.outputs.update}}
+            latest_version: ${{steps.should_update.outputs.latest_version}}
+            latest_commit: ${{steps.should_update.outputs.latest_commit}}
+        steps:
+
+          - name: Checkout This Repo
+            uses: actions/checkout@v4
+            with:
+                ref: main
+
+          - name: Get Last Built Version
+            id: current_commit
+            uses: juliangruber/read-file-action@v1
+            with:
+                path: ./CURRENT_COMMIT
+
+          - name: Determine Should Update
+            id: should_update
+            run: |
+                current_commit="${{steps.current_commit.outputs.content}}"
+                current_commit="${current_commit%"${current_commit##*[![:space:]]}"}"
+
+                latest_commit=$(curl -s "https://api.github.com/repos/bkaradzic/bgfx/commits/master" | jq -r '.sha')
+                echo "latest_commit=$latest_commit" >> $GITHUB_OUTPUT
+                
+                echo "Built commit: $current_commit"
+                echo "Latest commit: $latest_commit"
+                echo "tag=commit-${latest_commit:0:7}" >> $GITHUB_OUTPUT
+
+                if [ "$current_commit" = "$latest_commit" ]; then
+                    echo "update=false" >> $GITHUB_OUTPUT
+                    echo "Build skipped."
+                else
+                    echo "update=true" >> $GITHUB_OUTPUT
+                    echo "Starting build process."
+                fi
+
+    build-windows:
+        needs: check
+        if: needs.check.outputs.update == 'true'
+        uses: ./.github/workflows/build-windows.yml
+        with:
+            commit-sha: ${{needs.check.outputs.latest_commit}}
+
+    build-linux:
+        needs: check
+        if: needs.check.outputs.update == 'true'
+        uses: ./.github/workflows/build-linux.yml
+        with:
+            commit-sha: ${{needs.check.outputs.latest_commit}}
+
+    build-macos:
+        needs: check
+        if: needs.check.outputs.update == 'true'
+        uses: ./.github/workflows/build-macos.yml
+        with:
+            commit-sha: ${{needs.check.outputs.latest_commit}}
+
+    update-version:
+        runs-on: ubuntu-latest
+        needs: [check, build-linux, build-macos, build-windows]
+        permissions:
+            contents: write
+        env:
+            LATEST_COMMIT: ${{needs.check.outputs.latest_commit}}
+        outputs:
+            updated_commit: ${{steps.commit.outputs.commit}}
+        steps:
+
+          - name: Checkout This Repo
+            uses: actions/checkout@v4
+            with:
+                ref: main
+
+          - name: Configure Git
+            run: |
+                git config --global user.name "${{github.actor}}"
+                git config --global user.email "${{github.actor_id}}+${{github.actor}}@users.noreply.github.com"
+
+          - name: Update Commit File
+            run: |
+                set +o noclobber
+                echo "$LATEST_COMMIT" > ./CURRENT_COMMIT
+
+          - name: Commit Changes
+            id: commit
+            run: |
+                git add CURRENT_COMMIT
+                git commit -m "Automated: Update Current commit to $LATEST_COMMIT"
+
+                commit=$(git rev-parse HEAD)
+                echo "commit=$commit" >> $GITHUB_OUTPUT
+
+                git push
+
+    release-artifacts:
+        runs-on: ubuntu-latest
+        needs: [check, build-linux, build-macos, build-windows, update-version]
+        permissions:
+            contents: write
+        steps:
+
+          - name: Download Artifact wasmtime_windows_x64
+            uses: actions/download-artifact@v4
+            with:
+                name: wasmtime_windows_x64
+                path: wasmtime_windows_x64
+                github-token: ${{github.token}}
+                repository: ${{github.repository}}
+                run-id: ${{needs.build-windows.outputs.runid}}
+
+          - name: Download Artifact wasmtime_windows_arm64
+            uses: actions/download-artifact@v4
+            with:
+                name: wasmtime_windows_arm64
+                path: wasmtime_windows_arm64
+                github-token: ${{github.token}}
+                repository: ${{github.repository}}
+                run-id: ${{needs.build-windows.outputs.runid}}
+
+          - name: Download Artifact wasmtime_linux_x64
+            uses: actions/download-artifact@v4
+            with:
+                name: wasmtime_linux_x64
+                path: wasmtime_linux_x64
+                github-token: ${{github.token}}
+                repository: ${{github.repository}}
+                run-id: ${{needs.build-linux.outputs.runid}}
+
+          - name: Download Artifact wasmtime_linux_arm64
+            uses: actions/download-artifact@v4
+            with:
+                name: wasmtime_linux_arm64
+                path: wasmtime_linux_arm64
+                github-token: ${{github.token}}
+                repository: ${{github.repository}}
+                run-id: ${{needs.build-linux.outputs.runid}}
+
+          - name: Download Artifact wasmtime_macos_x64
+            uses: actions/download-artifact@v4
+            with:
+                name: wasmtime_macos_x64
+                path: wasmtime_macos_x64
+                github-token: ${{github.token}}
+                repository: ${{github.repository}}
+                run-id: ${{needs.build-macos.outputs.runid}}
+
+          - name: Download Artifact wasmtime_macos_arm64
+            uses: actions/download-artifact@v4
+            with:
+                name: wasmtime_macos_arm64
+                path: wasmtime_macos_arm64
+                github-token: ${{github.token}}
+                repository: ${{github.repository}}
+                run-id: ${{needs.build-macos.outputs.runid}}
+
+          - name: Release Artifacts
+            uses: ncipollo/release-action@v1.16.0
+            with:
+                artifacts: wasmtime_windows_x64/wasmtime_windows_x64_debug.7z, wasmtime_windows_x64/wasmtime_windows_x64_release.7z, wasmtime_windows_arm64/wasmtime_windows_arm64_debug.7z, wasmtime_windows_arm64/wasmtime_windows_arm64_release.7z, wasmtime_linux_x64/wasmtime_linux_x64_debug.7z, wasmtime_linux_x64/wasmtime_linux_x64_release.7z, wasmtime_linux_arm64/wasmtime_linux_arm64_debug.7z, wasmtime_linux_arm64/wasmtime_linux_arm64_release.7z, wasmtime_macos_x64/wasmtime_macos_x64_debug.7z, wasmtime_macos_x64/wasmtime_macos_x64_release.7z, wasmtime_macos_arm64/wasmtime_macos_arm64_debug.7z, wasmtime_macos_arm64/wasmtime_macos_arm64_release.7z
+                commit: ${{needs.update-version.outputs.updated_commit}}
+                tag: ${{needs.check.outputs.latest_version}}
+                body: Build for commit ${{needs.check.outputs.latest_commit}}.

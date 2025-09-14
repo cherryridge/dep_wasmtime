@@ -1,0 +1,112 @@
+﻿name: Build on Windows
+
+on:
+    workflow_call:
+        inputs:
+            commit-sha:
+                type: string
+                required: true
+        outputs:
+            runid:
+                value: ${{github.run_id}}
+    workflow_dispatch:
+        inputs:
+            commit-sha:
+                type: string
+                description: Target commit
+                required: true
+
+jobs:
+    x64:
+        runs-on: windows-latest
+        steps:
+
+          - name: Checkout wasmtime
+            uses: actions/checkout@v4
+            with:
+                repository: bytecodealliance/wasmtime
+                path: wasmtime
+                ref: ${{inputs.commit-sha}}
+                submodules: recursive
+
+          - name: Install Rust
+            uses: dtolnay/rust-toolchain@v1
+            with:
+                toolchain: stable
+                targets: x86_64-pc-windows-msvc
+
+          - name: Build Windows x64 Debug
+            shell: pwsh
+            run: |
+                cd wasmtime
+                cargo rustc -p wasmtime-c-api --target x86_64-pc-windows-msvc --crate-type=staticlib -- -Cdebuginfo=2 -Ctarget-feature=+crt-static
+
+          - name: Build Windows x64 Release
+            shell: pwsh
+            run: |
+                cd wasmtime
+                cargo rustc -p wasmtime-c-api --target x86_64-pc-windows-msvc --crate-type=staticlib --release -- -Ctarget-feature=+crt-static
+
+          - name: Compress Product
+            shell: pwsh
+            run: |
+                echo ${{inputs.commit-sha}} >> VERSION.txt
+                mkdir temp\include
+                cp -r wasmtime\crates\c-api\include\* temp\include
+                7z a wasmtime_windows_x64_debug.7z .\wasmtime\target\x86_64-pc-windows-msvc\debug\wasmtime.lib .\wasmtime\target\x86_64-pc-windows-msvc\debug\wasmtime.pdb .\temp\include VERSION.txt
+                7z a wasmtime_windows_x64_release.7z .\wasmtime\target\x86_64-pc-windows-msvc\release\wasmtime.lib .\temp\include VERSION.txt
+
+          - name: Upload Archive
+            uses: actions/upload-artifact@v4
+            with:
+                name: wasmtime_windows_x64
+                path: |
+                    *.7z
+                retention-days: 7
+
+    arm64:
+        runs-on: windows-11-arm
+        steps:
+
+          - name: Checkout wasmtime
+            uses: actions/checkout@v4
+            with:
+                repository: bytecodealliance/wasmtime
+                path: wasmtime
+                ref: ${{inputs.commit-sha}}
+                submodules: recursive
+
+          - name: Install Rust
+            uses: dtolnay/rust-toolchain@v1
+            with:
+                toolchain: stable
+                targets: aarch64-pc-windows-msvc
+
+          - name: Build Windows arm64 Debug (Cranelift)
+            shell: pwsh
+            run: |
+                cd wasmtime
+                cargo rustc -p wasmtime-c-api --target aarch64-pc-windows-msvc --crate-type=staticlib  -- -Cdebuginfo=2 -Ctarget-feature=+crt-static
+
+          - name: Build Windows arm64 Release (Cranelift)
+            shell: pwsh
+            run: |
+                cd wasmtime
+                cargo rustc -p wasmtime-c-api --target aarch64-pc-windows-msvc --crate-type=staticlib --release -- -Ctarget-feature=+crt-static
+
+          - name: Compress Product
+            shell: pwsh
+            run: |
+                echo ${{inputs.commit-sha}} >> VERSION.txt
+                mkdir temp\include
+                cp -r wasmtime\crates\c-api\include\* temp\include
+                7z a wasmtime_windows_x64_debug.7z .\wasmtime\target\x86_64-pc-windows-msvc\debug\wasmtime.lib .\wasmtime\target\x86_64-pc-windows-msvc\debug\wasmtime.pdb .\temp\include VERSION.txt
+                7z a wasmtime_windows_x64_release.7z .\wasmtime\target\x86_64-pc-windows-msvc\release\wasmtime.lib .\temp\include VERSION.txt
+
+          - name: Upload Archive
+            uses: actions/upload-artifact@v4
+            with:
+                name: wasmtime_windows_arm64
+                path: |
+                    *.7z
+                retention-days: 7
