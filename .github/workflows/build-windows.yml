@@ -40,6 +40,8 @@ jobs:
             run: |
                 cd wasmtime
                 cargo rustc -p wasmtime-c-api --target x86_64-pc-windows-msvc --crate-type=staticlib -- -Cdebuginfo=2 -Ctarget-feature=+crt-static
+                cd target\x86_64-pc-windows-msvc\debug
+                dir
 
           - name: Build Windows x64 Release
             shell: pwsh
