@@ -34,7 +34,7 @@ jobs:
                 current_commit="${{steps.current_commit.outputs.content}}"
                 current_commit="${current_commit%"${current_commit##*[![:space:]]}"}"
 
-                latest_commit=$(curl -s "https://api.github.com/repos/bytecodealliance/wasmtime/commits/master" | jq -r '.sha')
+                latest_commit=$(curl -s "https://api.github.com/repos/bytecodealliance/wasmtime/commits/main" | jq -r '.sha')
                 echo "latest_commit=$latest_commit" >> $GITHUB_OUTPUT
                 
                 echo "Built commit: $current_commit"
