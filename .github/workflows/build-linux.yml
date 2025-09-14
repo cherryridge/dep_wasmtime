@@ -21,11 +21,11 @@ jobs:
         runs-on: ubuntu-latest
         steps:
 
-          - name: Checkout Wasmer
+          - name: Checkout wasmtime
             uses: actions/checkout@v4
             with:
-                repository: wasmerio/wasmer
-                path: wasmer
+                repository: bytecodealliance/wasmtime
+                path: wasmtime
                 ref: ${{inputs.commit-sha}}
                 submodules: recursive
 
@@ -35,77 +35,44 @@ jobs:
                 toolchain: stable
                 targets: x86_64-unknown-linux-gnu
 
-          - name: Resolve LLVM Version
-            shell: bash
-            id: llvm
-            run: |
-                cd wasmer
-                cargo metadata --format-version=1 --features "wasmer-c-api/llvm,wasmer-c-api/wat" --no-default-features > meta.json
-                ver=$(jq -r '.packages[] | select(.name=="llvm-sys") | .version' meta.json)
-                sysMajor=${ver%%.*}
-                llvmMajor=$((sysMajor / 10))
-                llvmMinor=$((sysMajor % 10))
-                echo "sysMajor=$sysMajor" >> $GITHUB_OUTPUT
-                echo "llvmMajor=$llvmMajor" >> $GITHUB_OUTPUT
-                echo "llvmMinor=$llvmMinor" >> $GITHUB_OUTPUT
-
-          - name: Get LLVM ${{steps.llvm.outputs.llvmMajor}}
-            shell: bash
-            run: |
-                wget "https://github.com/wasmerio/llvm-custom-builds/releases/download/${{steps.llvm.outputs.llvmMajor}}.x/llvm-linux-amd64.tar.xz" -O llvm.tar.xz
-                mkdir llvm
-                tar -xJvf llvm.tar.xz -C llvm
-                prefix="${{github.workspace}}/llvm"
-                echo "LLVM_SYS_${{steps.llvm.outputs.sysMajor}}_PREFIX=$prefix" >> $GITHUB_ENV
-                echo "LLVM_CONFIG_PATH=$prefix/bin/llvm-config" >> $GITHUB_ENV
-                echo "$prefix/bin" >> $GITHUB_PATH
-
           - name: Build Linux x64 Debug
             shell: bash
             run: |
-                cd wasmer
-                cargo rustc -p wasmer-c-api --target x86_64-unknown-linux-gnu --no-default-features --features "llvm,wat" -- -Cdebuginfo=2 --crate-type=staticlib
+                cd wasmtime
+                cargo rustc -p wasmtime-c-api --target x86_64-unknown-linux-gnu --crate-type=staticlib -- -Cdebuginfo=2
 
           - name: Build Linux x64 Release
             shell: bash
             run: |
-                cd wasmer
-                cargo rustc -p wasmer-c-api --target x86_64-unknown-linux-gnu --no-default-features --features "llvm,wat" --release -- --crate-type=staticlib
+                cd wasmtime
+                cargo rustc -p wasmtime-c-api --target x86_64-unknown-linux-gnu --crate-type=staticlib --release
 
           - name: Compress Product
             shell: bash
             run: |
                 echo ${{inputs.commit-sha}} >> VERSION.txt
                 mkdir -p temp/include
-                cp -a wasmer/lib/c-api/tests/wasm-c-api/include/* temp/include
-                cp wasmer/lib/c-api/wasmer.h temp/include
-                cp wasmer/lib/c-api/wasmer_wasm.h temp/include
-                7z a wasmer_linux_x64_debug.7z ./wasmer/target/x86_64-unknown-linux-gnu/debug/libwasmer.a ./temp/include VERSION.txt
-                7z a wasmer_linux_x64_release.7z ./wasmer/target/x86_64-unknown-linux-gnu/release/libwasmer.a ./temp/include VERSION.txt
+                cp -a wasmtime/crates/c-api/include/* temp/include
+                7z a wasmtime_linux_x64_debug.7z ./wasmtime/target/x86_64-unknown-linux-gnu/debug/libwasmtime.a ./temp/include VERSION.txt
+                7z a wasmtime_linux_x64_release.7z ./wasmtime/target/x86_64-unknown-linux-gnu/release/libwasmtime.a ./temp/include VERSION.txt
 
           - name: Upload Archive
             uses: actions/upload-artifact@v4
             with:
-                name: wasmer_linux_x64
+                name: wasmtime_linux_x64
                 path: |
-                    ./wasmer_linux_x64_debug.7z, ./wasmer_linux_x64_release.7z
+                    *.7z
                 retention-days: 7
 
     arm64:
         runs-on: ubuntu-24.04-arm
         steps:
 
-          - name: Install Deps
-            shell: bash
-            run: |
-                sudo apt-get update
-                sudo apt-get install -y mold libzstd1 zstd libzstd-dev
-
-          - name: Checkout Wasmer
+          - name: Checkout wasmtime
             uses: actions/checkout@v4
             with:
-                repository: wasmerio/wasmer
-                path: wasmer
+                repository: bytecodealliance/wasmtime
+                path: wasmtime
                 ref: ${{inputs.commit-sha}}
                 submodules: recursive
 
@@ -115,58 +82,31 @@ jobs:
                 toolchain: stable
                 targets: aarch64-unknown-linux-gnu
 
-          - name: Resolve LLVM Version
-            shell: bash
-            id: llvm
-            run: |
-                cd wasmer
-                cargo metadata --format-version=1 --features "wasmer-c-api/llvm,wasmer-c-api/wat" --no-default-features > meta.json
-                ver=$(jq -r '.packages[] | select(.name=="llvm-sys") | .version' meta.json)
-                sysMajor=${ver%%.*}
-                llvmMajor=$((sysMajor / 10))
-                llvmMinor=$((sysMajor % 10))
-                echo "sysMajor=$sysMajor" >> $GITHUB_OUTPUT
-                echo "llvmMajor=$llvmMajor" >> $GITHUB_OUTPUT
-                echo "llvmMinor=$llvmMinor" >> $GITHUB_OUTPUT
-
-          - name: Get LLVM ${{steps.llvm.outputs.llvmMajor}}
-            shell: bash
-            run: |
-                wget "https://github.com/wasmerio/llvm-custom-builds/releases/download/${{steps.llvm.outputs.llvmMajor}}.x/llvm-linux-aarch64.tar.xz" -O llvm.tar.xz
-                mkdir llvm
-                tar -xJvf llvm.tar.xz -C llvm
-                prefix="${{github.workspace}}/llvm"
-                echo "LLVM_SYS_${{steps.llvm.outputs.sysMajor}}_PREFIX=$prefix" >> $GITHUB_ENV
-                echo "LLVM_CONFIG_PATH=$prefix/bin/llvm-config" >> $GITHUB_ENV
-                echo "$prefix/bin" >> $GITHUB_PATH
-
           - name: Build Linux arm64 Debug
             shell: bash
             run: |
-                cd wasmer
-                cargo rustc -p wasmer-c-api --target aarch64-unknown-linux-gnu --no-default-features --features "llvm,wat" -- -Cdebuginfo=2 --crate-type=staticlib
+                cd wasmtime
+                cargo rustc -p wasmtime-c-api --target aarch64-unknown-linux-gnu --crate-type=staticlib -- -Cdebuginfo=2
 
           - name: Build Linux arm64 Release
             shell: bash
             run: |
-                cd wasmer
-                cargo rustc -p wasmer-c-api --target aarch64-unknown-linux-gnu --no-default-features --features "llvm,wat" --release -- --crate-type=staticlib
+                cd wasmtime
+                cargo rustc -p wasmtime-c-api --target aarch64-unknown-linux-gnu --crate-type=staticlib --release
 
           - name: Compress Product
             shell: bash
             run: |
                 echo ${{inputs.commit-sha}} >> VERSION.txt
                 mkdir -p temp/include
-                cp -a wasmer/lib/c-api/tests/wasm-c-api/include/* temp/include
-                cp wasmer/lib/c-api/wasmer.h temp/include
-                cp wasmer/lib/c-api/wasmer_wasm.h temp/include
-                7z a wasmer_linux_arm64_debug.7z ./wasmer/target/aarch64-unknown-linux-gnu/debug/libwasmer.a ./temp/include VERSION.txt
-                7z a wasmer_linux_arm64_release.7z ./wasmer/target/aarch64-unknown-linux-gnu/release/libwasmer.a ./temp/include VERSION.txt
+                cp -a wasmtime/crates/c-api/include/* temp/include
+                7z a wasmtime_linux_arm64_debug.7z ./wasmtime/target/aarch64-unknown-linux-gnu/debug/libwasmtime.a ./temp/include VERSION.txt
+                7z a wasmtime_linux_arm64_release.7z ./wasmtime/target/aarch64-unknown-linux-gnu/release/libwasmtime.a ./temp/include VERSION.txt
 
           - name: Upload Archive
             uses: actions/upload-artifact@v4
             with:
-                name: wasmer_linux_arm64
+                name: wasmtime_linux_arm64
                 path: |
-                    ./wasmer_linux_arm64_debug.7z, ./wasmer_linux_arm64_release.7z
+                    *.7z
                 retention-days: 7
