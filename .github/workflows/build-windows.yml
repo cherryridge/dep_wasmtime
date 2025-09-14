@@ -40,8 +40,6 @@ jobs:
             run: |
                 cd wasmtime
                 cargo rustc -p wasmtime-c-api --target x86_64-pc-windows-msvc --crate-type=staticlib -- -Cdebuginfo=2 -Ctarget-feature=+crt-static
-                cd target\x86_64-pc-windows-msvc\debug
-                dir
 
           - name: Build Windows x64 Release
             shell: pwsh
@@ -55,7 +53,7 @@ jobs:
                 echo ${{inputs.commit-sha}} >> VERSION.txt
                 mkdir temp\include
                 cp -r wasmtime\crates\c-api\include\* temp\include
-                7z a wasmtime_windows_x64_debug.7z .\wasmtime\target\x86_64-pc-windows-msvc\debug\wasmtime.lib .\wasmtime\target\x86_64-pc-windows-msvc\debug\wasmtime.pdb .\temp\include VERSION.txt
+                7z a wasmtime_windows_x64_debug.7z .\wasmtime\target\x86_64-pc-windows-msvc\debug\wasmtime.lib .\temp\include VERSION.txt
                 7z a wasmtime_windows_x64_release.7z .\wasmtime\target\x86_64-pc-windows-msvc\release\wasmtime.lib .\temp\include VERSION.txt
 
           - name: Upload Archive
@@ -84,13 +82,13 @@ jobs:
                 toolchain: stable
                 targets: aarch64-pc-windows-msvc
 
-          - name: Build Windows arm64 Debug (Cranelift)
+          - name: Build Windows arm64 Debug
             shell: pwsh
             run: |
                 cd wasmtime
                 cargo rustc -p wasmtime-c-api --target aarch64-pc-windows-msvc --crate-type=staticlib  -- -Cdebuginfo=2 -Ctarget-feature=+crt-static
 
-          - name: Build Windows arm64 Release (Cranelift)
+          - name: Build Windows arm64 Release
             shell: pwsh
             run: |
                 cd wasmtime
@@ -102,7 +100,7 @@ jobs:
                 echo ${{inputs.commit-sha}} >> VERSION.txt
                 mkdir temp\include
                 cp -r wasmtime\crates\c-api\include\* temp\include
-                7z a wasmtime_windows_x64_debug.7z .\wasmtime\target\aarch64-pc-windows-msvc\debug\wasmtime.lib .\wasmtime\target\aarch64-pc-windows-msvc\debug\wasmtime.pdb .\temp\include VERSION.txt
+                7z a wasmtime_windows_x64_debug.7z .\wasmtime\target\aarch64-pc-windows-msvc\debug\wasmtime.lib .\temp\include VERSION.txt
                 7z a wasmtime_windows_x64_release.7z .\wasmtime\target\aarch64-pc-windows-msvc\release\wasmtime.lib .\temp\include VERSION.txt
 
           - name: Upload Archive
