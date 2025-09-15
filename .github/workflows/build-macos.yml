@@ -38,23 +38,26 @@ jobs:
           - name: Build MacOS x64 Debug
             shell: bash
             run: |
-                cd wasmtime
-                cargo rustc -p wasmtime-c-api --target x86_64-apple-darwin --crate-type=staticlib -- -Cdebuginfo=2
+                cd wasmtime/crates/c-api
+                export RUSTFLAGS="-Cdebuginfo=2"
+                cmake -S . -B build -A x64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-apple-darwin -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
+                cmake --build build --config Debug --parallel -- /m
+                cmake --install build --config Debug
 
           - name: Build MacOS x64 Release
             shell: bash
             run: |
-                cd wasmtime
-                cargo rustc -p wasmtime-c-api --target x86_64-apple-darwin --crate-type=staticlib --release
+                cd wasmtime/crates/c-api
+                cmake -S . -B build -A x64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-apple-darwin -DCMAKE_INSTALL_PREFIX="$PWD/release" -DCMAKE_BUILD_TYPE=Release
+                cmake --build build --config Release --parallel -- /m
+                cmake --install build --config Release
 
           - name: Compress Product
             shell: bash
             run: |
                 echo ${{inputs.commit-sha}} >> VERSION.txt
-                mkdir -p temp/include
-                cp -a wasmtime/crates/c-api/include/* temp/include
-                7z a wasmtime_macos_x64_debug.7z ./wasmtime/target/x86_64-apple-darwin/debug/libwasmtime.a ./temp/include VERSION.txt
-                7z a wasmtime_macos_x64_release.7z ./wasmtime/target/x86_64-apple-darwin/release/libwasmtime.a ./temp/include VERSION.txt
+                7z a wasmtime_macos_x64_debug.7z .\wasmtime\crates\c-api\debug\lib\libwasmtime.a .\wasmtime\crates\c-api\debug\include VERSION.txt
+                7z a wasmtime_macos_x64_release.7z .\wasmtime\crates\c-api\release\lib\libwasmtime.a .\wasmtime\crates\c-api\release\include VERSION.txt
 
           - name: Upload Archive
             uses: actions/upload-artifact@v4
@@ -85,23 +88,26 @@ jobs:
           - name: Build MacOS arm64 Debug
             shell: bash
             run: |
-                cd wasmtime
-                cargo rustc -p wasmtime-c-api --target aarch64-apple-darwin --crate-type=staticlib -- -Cdebuginfo=2
+                cd wasmtime/crates/c-api
+                export RUSTFLAGS="-Cdebuginfo=2"
+                cmake -S . -B build -A arm64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-apple-darwin -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
+                cmake --build build --config Debug --parallel -- /m
+                cmake --install build --config Debug
 
           - name: Build MacOS arm64 Release
             shell: bash
             run: |
-                cd wasmtime
-                cargo rustc -p wasmtime-c-api --target aarch64-apple-darwin --crate-type=staticlib --release
+                cd wasmtime/crates/c-api
+                cmake -S . -B build -A arm64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-apple-darwin -DCMAKE_INSTALL_PREFIX="$PWD/release" -DCMAKE_BUILD_TYPE=Release
+                cmake --build build --config Release --parallel -- /m
+                cmake --install build --config Release
 
           - name: Compress Product
             shell: bash
             run: |
                 echo ${{inputs.commit-sha}} >> VERSION.txt
-                mkdir -p temp/include
-                cp -a wasmtime/crates/c-api/include/* temp/include
-                7z a wasmtime_macos_arm64_debug.7z ./wasmtime/target/aarch64-apple-darwin/debug/libwasmtime.a ./temp/include VERSION.txt
-                7z a wasmtime_macos_arm64_release.7z ./wasmtime/target/aarch64-apple-darwin/release/libwasmtime.a ./temp/include VERSION.txt
+                7z a wasmtime_macos_arm64_debug.7z .\wasmtime\crates\c-api\debug\lib\libwasmtime.a .\wasmtime\crates\c-api\debug\include VERSION.txt
+                7z a wasmtime_macos_arm64_release.7z .\wasmtime\crates\c-api\release\lib\libwasmtime.a .\wasmtime\crates\c-api\release\include VERSION.txt
 
           - name: Upload Archive
             uses: actions/upload-artifact@v4
