@@ -100,8 +100,8 @@ jobs:
                 echo ${{inputs.commit-sha}} >> VERSION.txt
                 mkdir temp\include
                 cp -r wasmtime\crates\c-api\include\* temp\include
-                7z a wasmtime_windows_x64_debug.7z .\wasmtime\target\aarch64-pc-windows-msvc\debug\wasmtime.lib .\temp\include VERSION.txt
-                7z a wasmtime_windows_x64_release.7z .\wasmtime\target\aarch64-pc-windows-msvc\release\wasmtime.lib .\temp\include VERSION.txt
+                7z a wasmtime_windows_arm64_debug.7z .\wasmtime\target\aarch64-pc-windows-msvc\debug\wasmtime.lib .\temp\include VERSION.txt
+                7z a wasmtime_windows_arm64_release.7z .\wasmtime\target\aarch64-pc-windows-msvc\release\wasmtime.lib .\temp\include VERSION.txt
 
           - name: Upload Archive
             uses: actions/upload-artifact@v4
