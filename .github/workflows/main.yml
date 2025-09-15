@@ -13,8 +13,8 @@ jobs:
         runs-on: ubuntu-latest
         outputs:
             update: ${{steps.should_update.outputs.update}}
-            latest_version: ${{steps.should_update.outputs.latest_version}}
             latest_commit: ${{steps.should_update.outputs.latest_commit}}
+            tag: ${{steps.should_update.outputs.tag}}
         steps:
 
           - name: Checkout This Repo
@@ -70,7 +70,7 @@ jobs:
         with:
             commit-sha: ${{needs.check.outputs.latest_commit}}
 
-    update-version:
+    update-commit:
         runs-on: ubuntu-latest
         needs: [check, build-linux, build-macos, build-windows]
         permissions:
@@ -109,7 +109,7 @@ jobs:
 
     release-artifacts:
         runs-on: ubuntu-latest
-        needs: [check, build-linux, build-macos, build-windows, update-version]
+        needs: [check, build-linux, build-macos, build-windows, update-commit]
         permissions:
             contents: write
         steps:
@@ -172,6 +172,6 @@ jobs:
             uses: ncipollo/release-action@v1.16.0
             with:
                 artifacts: wasmtime_windows_x64/wasmtime_windows_x64_debug.7z, wasmtime_windows_x64/wasmtime_windows_x64_release.7z, wasmtime_windows_arm64/wasmtime_windows_arm64_debug.7z, wasmtime_windows_arm64/wasmtime_windows_arm64_release.7z, wasmtime_linux_x64/wasmtime_linux_x64_debug.7z, wasmtime_linux_x64/wasmtime_linux_x64_release.7z, wasmtime_linux_arm64/wasmtime_linux_arm64_debug.7z, wasmtime_linux_arm64/wasmtime_linux_arm64_release.7z, wasmtime_macos_x64/wasmtime_macos_x64_debug.7z, wasmtime_macos_x64/wasmtime_macos_x64_release.7z, wasmtime_macos_arm64/wasmtime_macos_arm64_debug.7z, wasmtime_macos_arm64/wasmtime_macos_arm64_release.7z
-                commit: ${{needs.update-version.outputs.updated_commit}}
-                tag: ${{needs.check.outputs.latest_version}}
+                commit: ${{needs.update-commit.outputs.updated_commit}}
+                tag: ${{needs.check.outputs.tag}}
                 body: Build for commit ${{needs.check.outputs.latest_commit}}.
