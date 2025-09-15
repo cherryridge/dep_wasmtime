@@ -38,23 +38,27 @@ jobs:
           - name: Build Windows x64 Debug
             shell: pwsh
             run: |
-                cd wasmtime
-                cargo rustc -p wasmtime-c-api --target x86_64-pc-windows-msvc --crate-type=staticlib -- -Cdebuginfo=2 -Ctarget-feature=+crt-static
+                cd wasmtime\crates\c-api
+                $env:RUSTFLAGS="-Cdebuginfo=2 -Ctarget-feature=+crt-static"
+                cmake -S . -B build -A x64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
+                cmake --build build --config Debug --parallel -- /m
+                cmake --install build --config Debug
 
           - name: Build Windows x64 Release
             shell: pwsh
             run: |
-                cd wasmtime
-                cargo rustc -p wasmtime-c-api --target x86_64-pc-windows-msvc --crate-type=staticlib --release -- -Ctarget-feature=+crt-static
+                cd wasmtime\crates\c-api
+                $env:RUSTFLAGS="-Ctarget-feature=+crt-static"
+                cmake -S . -B build -A x64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/release" -DCMAKE_BUILD_TYPE=Release
+                cmake --build build --config Release --parallel -- /m
+                cmake --install build --config Release
 
           - name: Compress Product
             shell: pwsh
             run: |
                 echo ${{inputs.commit-sha}} >> VERSION.txt
-                mkdir temp\include
-                cp -r wasmtime\crates\c-api\include\* temp\include
-                7z a wasmtime_windows_x64_debug.7z .\wasmtime\target\x86_64-pc-windows-msvc\debug\wasmtime.lib .\temp\include VERSION.txt
-                7z a wasmtime_windows_x64_release.7z .\wasmtime\target\x86_64-pc-windows-msvc\release\wasmtime.lib .\temp\include VERSION.txt
+                7z a wasmtime_windows_x64_debug.7z .\wasmtime\crates\c-api\debug\lib\wasmtime.lib .\wasmtime\crates\c-api\debug\include VERSION.txt
+                7z a wasmtime_windows_x64_release.7z .\wasmtime\crates\c-api\release\lib\wasmtime.lib .\wasmtime\crates\c-api\release\include VERSION.txt
 
           - name: Upload Archive
             uses: actions/upload-artifact@v4
@@ -85,23 +89,27 @@ jobs:
           - name: Build Windows arm64 Debug
             shell: pwsh
             run: |
-                cd wasmtime
-                cargo rustc -p wasmtime-c-api --target aarch64-pc-windows-msvc --crate-type=staticlib  -- -Cdebuginfo=2 -Ctarget-feature=+crt-static
+                cd wasmtime\crates\c-api
+                $env:RUSTFLAGS="-Cdebuginfo=2 -Ctarget-feature=+crt-static"
+                cmake -S . -B build -A arm64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
+                cmake --build build --config Debug --parallel -- /m
+                cmake --install build --config Debug
 
           - name: Build Windows arm64 Release
             shell: pwsh
             run: |
-                cd wasmtime
-                cargo rustc -p wasmtime-c-api --target aarch64-pc-windows-msvc --crate-type=staticlib --release -- -Ctarget-feature=+crt-static
+                cd wasmtime\crates\c-api
+                $env:RUSTFLAGS="-Ctarget-feature=+crt-static"
+                cmake -S . -B build -A arm64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/release" -DCMAKE_BUILD_TYPE=Release
+                cmake --build build --config Release --parallel -- /m
+                cmake --install build --config Release
 
           - name: Compress Product
             shell: pwsh
             run: |
                 echo ${{inputs.commit-sha}} >> VERSION.txt
-                mkdir temp\include
-                cp -r wasmtime\crates\c-api\include\* temp\include
-                7z a wasmtime_windows_arm64_debug.7z .\wasmtime\target\aarch64-pc-windows-msvc\debug\wasmtime.lib .\temp\include VERSION.txt
-                7z a wasmtime_windows_arm64_release.7z .\wasmtime\target\aarch64-pc-windows-msvc\release\wasmtime.lib .\temp\include VERSION.txt
+                7z a wasmtime_windows_arm64_debug.7z .\wasmtime\crates\c-api\debug\lib\wasmtime.lib .\wasmtime\crates\c-api\debug\include VERSION.txt
+                7z a wasmtime_windows_arm64_release.7z .\wasmtime\crates\c-api\release\lib\wasmtime.lib .\wasmtime\crates\c-api\release\include VERSION.txt
 
           - name: Upload Archive
             uses: actions/upload-artifact@v4
