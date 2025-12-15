@@ -18,7 +18,7 @@ on:
 
 jobs:
     x64:
-        runs-on: macos-13
+        runs-on: macos-15-intel
         steps:
 
           - name: Checkout wasmtime
