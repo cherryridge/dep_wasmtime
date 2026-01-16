@@ -35,10 +35,18 @@ jobs:
                 toolchain: stable
                 targets: x86_64-unknown-linux-gnu
 
+          - name: Install Dependencies
+            shell: bash
+            run: |
+                sudo apt update
+                sudo apt install clang llvm
+
           - name: Build Linux x64 Debug
             shell: bash
             run: |
                 cd wasmtime/crates/c-api
+                export CC=clang
+                export CXX=clang++
                 export RUSTFLAGS="-Cdebuginfo=2"
                 cmake -S . -B build -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-unknown-linux-gnu -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
                 cmake --build build --config Debug --parallel
@@ -48,6 +56,8 @@ jobs:
             shell: bash
             run: |
                 cd wasmtime/crates/c-api
+                export CC=clang
+                export CXX=clang++
                 cmake -S . -B build -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-unknown-linux-gnu -DCMAKE_INSTALL_PREFIX="$PWD/release" -DCMAKE_BUILD_TYPE=Release
                 cmake --build build --config Release --parallel
                 cmake --install build --config Release
@@ -89,6 +99,8 @@ jobs:
             shell: bash
             run: |
                 cd wasmtime/crates/c-api
+                export CC=clang
+                export CXX=clang++
                 export RUSTFLAGS="-Cdebuginfo=2"
                 cmake -S . -B build -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-unknown-linux-gnu -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
                 cmake --build build --config Debug --parallel
@@ -98,6 +110,8 @@ jobs:
             shell: bash
             run: |
                 cd wasmtime/crates/c-api
+                export CC=clang
+                export CXX=clang++
                 cmake -S . -B build -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-unknown-linux-gnu -DCMAKE_INSTALL_PREFIX="$PWD/release" -DCMAKE_BUILD_TYPE=Release
                 cmake --build build --config Release --parallel
                 cmake --install build --config Release

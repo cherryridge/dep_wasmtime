@@ -39,18 +39,22 @@ jobs:
             shell: pwsh
             run: |
                 cd wasmtime\crates\c-api
+                $env:CC = "clang-cl"
+                $env:CXX = "clang-cl"
                 $env:RUSTFLAGS="-Cdebuginfo=2 -Ctarget-feature=+crt-static"
-                cmake -S . -B build -A x64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
-                cmake --build build --config Debug --parallel -- /m
+                cmake -S . -B build -A x64 -T ClangCL -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
+                cmake --build build --config Debug --parallel -- /m /p:UseLldLink=true
                 cmake --install build --config Debug
 
           - name: Build Windows x64 Release
             shell: pwsh
             run: |
                 cd wasmtime\crates\c-api
+                $env:CC = "clang-cl"
+                $env:CXX = "clang-cl"
                 $env:RUSTFLAGS="-Ctarget-feature=+crt-static"
-                cmake -S . -B build -A x64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/release" -DCMAKE_BUILD_TYPE=Release
-                cmake --build build --config Release --parallel -- /m
+                cmake -S . -B build -A x64 -T ClangCL -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/release" -DCMAKE_BUILD_TYPE=Release
+                cmake --build build --config Release --parallel -- /m /p:UseLldLink=true
                 cmake --install build --config Release
 
           - name: Compress Product
@@ -90,18 +94,22 @@ jobs:
             shell: pwsh
             run: |
                 cd wasmtime\crates\c-api
+                $env:CC = "clang-cl"
+                $env:CXX = "clang-cl"
                 $env:RUSTFLAGS="-Cdebuginfo=2 -Ctarget-feature=+crt-static"
-                cmake -S . -B build -A arm64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
-                cmake --build build --config Debug --parallel -- /m
+                cmake -S . -B build -A arm64 -T ClangCL -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
+                cmake --build build --config Debug --parallel -- /m /p:UseLldLink=true
                 cmake --install build --config Debug
 
           - name: Build Windows arm64 Release
             shell: pwsh
             run: |
                 cd wasmtime\crates\c-api
+                $env:CC = "clang-cl"
+                $env:CXX = "clang-cl"
                 $env:RUSTFLAGS="-Ctarget-feature=+crt-static"
-                cmake -S . -B build -A arm64 -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/release" -DCMAKE_BUILD_TYPE=Release
-                cmake --build build --config Release --parallel -- /m
+                cmake -S . -B build -A arm64 -T ClangCL -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/release" -DCMAKE_BUILD_TYPE=Release
+                cmake --build build --config Release --parallel -- /m /p:UseLldLink=true
                 cmake --install build --config Release
 
           - name: Compress Product
