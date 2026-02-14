@@ -5,7 +5,7 @@ permissions:
 
 on:
     schedule:
-        - cron: "0 9 */7 * *"
+        - cron: "0 9 */5 * *"
     workflow_dispatch:
 
 jobs:
@@ -174,4 +174,5 @@ jobs:
                 artifacts: wasmtime_windows_x64/wasmtime_windows_x64_debug.7z, wasmtime_windows_x64/wasmtime_windows_x64_release.7z, wasmtime_windows_arm64/wasmtime_windows_arm64_debug.7z, wasmtime_windows_arm64/wasmtime_windows_arm64_release.7z, wasmtime_linux_x64/wasmtime_linux_x64_debug.7z, wasmtime_linux_x64/wasmtime_linux_x64_release.7z, wasmtime_linux_arm64/wasmtime_linux_arm64_debug.7z, wasmtime_linux_arm64/wasmtime_linux_arm64_release.7z, wasmtime_macos_x64/wasmtime_macos_x64_debug.7z, wasmtime_macos_x64/wasmtime_macos_x64_release.7z, wasmtime_macos_arm64/wasmtime_macos_arm64_debug.7z, wasmtime_macos_arm64/wasmtime_macos_arm64_release.7z
                 commit: ${{needs.update-commit.outputs.updated_commit}}
                 tag: ${{needs.check.outputs.tag}}
+
                 body: Build for commit ${{needs.check.outputs.latest_commit}}.
