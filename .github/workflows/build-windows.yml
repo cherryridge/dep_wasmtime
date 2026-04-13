@@ -41,7 +41,7 @@ jobs:
                 cd wasmtime\crates\c-api
                 $env:CC = "clang-cl"
                 $env:CXX = "clang-cl"
-                $env:RUSTFLAGS="-Cdebuginfo=2 -Ctarget-feature=+crt-static"
+                $env:RUSTFLAGS="-Cdebuginfo=2 -Ctarget-feature=+crt-static -Clink-arg=/nodefaultlib:libcmt.lib -Clink-arg=libcmtd.lib -Clink-arg=/nodefaultlib:msvcrt.lib"
                 cmake -S . -B build -A x64 -T ClangCL -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=x86_64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
                 cmake --build build --config Debug --parallel -- /m /p:UseLldLink=true
                 cmake --install build --config Debug
@@ -96,7 +96,7 @@ jobs:
                 cd wasmtime\crates\c-api
                 $env:CC = "clang-cl"
                 $env:CXX = "clang-cl"
-                $env:RUSTFLAGS="-Cdebuginfo=2 -Ctarget-feature=+crt-static"
+                $env:RUSTFLAGS="-Cdebuginfo=2 -Ctarget-feature=+crt-static -Clink-arg=/nodefaultlib:libcmt.lib -Clink-arg=libcmtd.lib -Clink-arg=/nodefaultlib:msvcrt.lib"
                 cmake -S . -B build -A arm64 -T ClangCL -DWASMTIME_ALWAYS_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DWASMTIME_TARGET=aarch64-pc-windows-msvc -DCMAKE_INSTALL_PREFIX="$PWD/debug" -DCMAKE_BUILD_TYPE=Debug
                 cmake --build build --config Debug --parallel -- /m /p:UseLldLink=true
                 cmake --install build --config Debug
